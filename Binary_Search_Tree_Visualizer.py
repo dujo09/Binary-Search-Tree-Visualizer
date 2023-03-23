@@ -1,22 +1,25 @@
 from tkinter import *
 from random import randint
 from time import sleep
+from tkinter.messagebox import showerror
 
 NODE_RADIUS = 30
 BACKGROUND_COLOR = "black"
 NODE_COLOR = "white"
 TEXT_COLOR = "black"
 LINE_COLOR = "white"
-FONT = "Arial 15 bold"
+FONT = "Arial 20 bold"
 
 WINDOW_WIDTH = 1200
 WINDOW_HEIGHT = 700
 X_PADDING = 150
-Y_PADDING = NODE_RADIUS * 3
+Y_PADDING = NODE_RADIUS * 3 + 10
 
 MAX_DEPTH = 4
+MAX_VALUE = 100
+MIN_VALUE = 0
 
-ANIMATION_DELAY = 1
+ANIMATION_DELAY = 0.5
 
 rootNode = None
 window = Tk()
@@ -42,16 +45,20 @@ def calculateRightChildPosition(parentPositionX, parentPositionY, childDepth):
 
 def insertNode(root: Node, value, depth, canvas, rootPositionX, rootPositionY):
     if depth > MAX_DEPTH:
-        return root
-    if root is None:
-        root = Node(value)
+        showerror(title="ERROR", message="Max depth reached")
         return root
 
-    drawOvalWithText(canvas, rootPositionX, rootPositionY - NODE_RADIUS - NODE_RADIUS / 1.5,
-                     NODE_RADIUS / 1.5, NODE_COLOR,
+    insertedOval = createOvalWithText(canvas, rootPositionX, rootPositionY - 2 * NODE_RADIUS - 5,
+                     NODE_RADIUS, NODE_COLOR,
                      value, TEXT_COLOR, FONT)
 
     sleep(ANIMATION_DELAY)
+
+    canvas.itemconfig(insertedOval, fill="lightgrey")
+
+    if root is None:
+        root = Node(value)
+        return root
 
     if value < root.value:
         leftChildPositionX, leftChildPositionY = calculateLeftChildPosition(rootPositionX, rootPositionY, depth + 1)
@@ -60,7 +67,7 @@ def insertNode(root: Node, value, depth, canvas, rootPositionX, rootPositionY):
         rightChildPositionX, rightChildPositionY = calculateRightChildPosition(rootPositionX, rootPositionY, depth + 1)
         root.rightChild = insertNode(root.rightChild, value, depth + 1, canvas, rightChildPositionX, rightChildPositionY)
     elif value == root.value:
-        print("ERROR: Node already in tree")
+        showerror(title="ERROR", message="Node already in tree")
 
     return root
 
@@ -87,13 +94,13 @@ def drawTree(root: Node, canvas, rootPositionX, rootPositionY, depth):
                            fill=LINE_COLOR, width=5)
         drawTree(root.rightChild, canvas, rightChildPositionX, rightChildPositionY, depth + 1)
 
-    drawOvalWithText(canvas, rootPositionX, rootPositionY, 
+    createOvalWithText(canvas, rootPositionX, rootPositionY, 
                      NODE_RADIUS, NODE_COLOR, 
                      root.value, TEXT_COLOR, FONT)
 
 
-def drawOvalWithText(canvas, centerX, centerY, radius, color, text, textColor, font):
-    canvas.create_oval(centerX - radius, centerY - radius,
+def createOvalWithText(canvas, centerX, centerY, radius, color, text, textColor, font):
+    oval = canvas.create_oval(centerX - radius, centerY - radius,
                        centerX + radius, centerY + radius,
                        fill=color, width=0)
     canvas.create_text(centerX, centerY,
@@ -102,13 +109,22 @@ def drawOvalWithText(canvas, centerX, centerY, radius, color, text, textColor, f
                        font=font)
     window.update()
 
+    return oval
+
 
 def onClickInsert(value):
     global rootNode
     try:
         value = int(value)
     except ValueError:
-        print("ERROR incorrect input")
+        showerror(title="ERROR", message="Invalid input")
+        return
+
+    if value > MAX_VALUE:
+        showerror(title="ERROR", message="Input value exceeding max allowed")
+        return
+    if value < MIN_VALUE:
+        showerror(title="ERROR", message="Input value under min allowed")
         return
 
     rootPositionX = WINDOW_WIDTH/2
@@ -129,11 +145,14 @@ window.title("Binary Search Tree Visualizer")
 canvas = Canvas(window, bg=BACKGROUND_COLOR)
 canvas.pack(side=TOP, fill=BOTH, expand=2)
 
-insertRandom = Button(window, text="Insert Random", font=("Arial 15 bold"), command=lambda:onClickInsert(randint(0, 999)))
+insertRandom = Button(window, text="Insert Random", font=("Arial 15 bold"), 
+                      command=lambda:onClickInsert(randint(MIN_VALUE, MAX_VALUE)))
 insertRandom.pack(side=LEFT, fill=X, expand=1)
+window.bind('<Rightshift>',lambda event:onClickInsert(inputField.get()))
 
 insertButton = Button(window, text="Insert", font=("Arial 15 bold"), command=lambda:onClickInsert(inputField.get()))
 insertButton.pack(side=LEFT, fill=X, expand=1)
+window.bind('<Return>',lambda event:onClickInsert(inputField.get()))
 
 deleteButton = Button(window, text="Delete", font=("Arial 15 bold"))
 deleteButton.pack(side=LEFT, fill=X, expand=1)
