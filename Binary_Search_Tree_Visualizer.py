@@ -61,7 +61,6 @@ def insertNode(rootNode, value, rootPositionX, rootPositionY, nodeDepth, canvas,
     window.update()
     sleep(ANIMATION_DELAY)
     
-
     if value < rootNode.value:
         createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
                                 NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, NODE_COLOR,
@@ -90,6 +89,49 @@ def insertNode(rootNode, value, rootPositionX, rootPositionY, nodeDepth, canvas,
         showinfo(title="Insert", message="Node already in tree")
 
     return rootNode
+
+
+def searchTree(rootNode, value, rootPositionX, rootPositionY, nodeDepth, canvas, window):
+    if nodeDepth > MAX_DEPTH or rootNode is None:
+        showinfo(title="Search", message="Node not found")
+        return rootNode
+
+    createOvalWithText(canvas, rootPositionX, rootPositionY - 3 * NODE_RADIUS,
+                        NODE_RADIUS, NODE_COLOR,
+                        value, TEXT_COLOR, FONT_SIZE)
+    window.update()
+    sleep(ANIMATION_DELAY)
+
+    if value < rootNode.value:
+        createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
+                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, NODE_COLOR,
+                                "<", TEXT_COLOR, FONT_SIZE)
+        window.update()
+        sleep(ANIMATION_DELAY)
+
+        leftChildPositionX, leftChildPositionY = calculateLeftChildPosition(rootPositionX, rootPositionY, nodeDepth + 1)
+        searchTree(rootNode.leftChild, value, 
+                    leftChildPositionX, leftChildPositionY, 
+                    nodeDepth + 1, 
+                    canvas, window)
+    elif value > rootNode.value:
+        createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
+                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, NODE_COLOR,
+                                ">", TEXT_COLOR, FONT_SIZE)
+        window.update()
+        sleep(ANIMATION_DELAY)
+        
+        rightChildPositionX, rightChildPositionY = calculateRightChildPosition(rootPositionX, rootPositionY, nodeDepth + 1)
+        searchTree(rootNode.rightChild, value, 
+                    rightChildPositionX, rightChildPositionY,
+                    nodeDepth + 1, 
+                    canvas, window)
+    elif value == rootNode.value:
+        createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
+                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, NODE_COLOR,
+                                "=", TEXT_COLOR, FONT_SIZE)
+        window.update()
+        sleep(ANIMATION_DELAY)
 
 
 def drawTree(rootNode, rootPositionX, rootPositionY, nodeDepth, canvas, window):
@@ -168,6 +210,7 @@ def onClickInsert(value):
     insertButton["state"] = DISABLED
     insertRandom["state"] = DISABLED
     deleteButton["state"] = DISABLED
+    searchButton["state"] = DISABLED
     inputField["state"] = DISABLED
 
     rootNode = insertNode(rootNode, value, rootPositionX, rootPositionY, 0, canvas, window)
@@ -181,6 +224,35 @@ def onClickInsert(value):
     insertButton["state"] = NORMAL
     insertRandom["state"] = NORMAL
     deleteButton["state"] = NORMAL
+    searchButton["state"] = NORMAL
+    inputField["state"] = NORMAL
+
+
+def onClickSearch(value):
+    if not isInputValid(value):
+        return
+
+    value = int(value)
+
+    rootPositionX = WINDOW_WIDTH/2
+    rootPositionY = Y_PADDING
+
+    insertButton["state"] = DISABLED
+    insertRandom["state"] = DISABLED
+    deleteButton["state"] = DISABLED
+    searchButton["state"] = DISABLED
+    inputField["state"] = DISABLED
+
+    searchTree(rootNode, value, rootPositionX, rootPositionY, 0, canvas, window)
+
+    sleep(1)
+    canvas.delete("all")
+    drawTree(rootNode, rootPositionX, rootPositionY, 0, canvas, window)
+
+    insertButton["state"] = NORMAL
+    insertRandom["state"] = NORMAL
+    deleteButton["state"] = NORMAL
+    searchButton["state"] = NORMAL
     inputField["state"] = NORMAL
 
 
@@ -188,13 +260,11 @@ window.geometry(str(WINDOW_WIDTH) + "x" + str(WINDOW_HEIGHT) + "+100-100")
 window.resizable(False, False)
 window.title("Binary Search Tree Visualizer")
 
-
 canvas = Canvas(window, bg=BACKGROUND_COLOR)
 canvas.pack(side=TOP, fill=BOTH, expand=2)
 
 insertRandom = Button(window, text="Insert Random", font=("Arial 15"), 
-                      command=lambda:onClickInsert(randint(MIN_VALUE, MAX_VALUE))
-)
+                      command=lambda:onClickInsert(randint(MIN_VALUE, MAX_VALUE)))
 insertRandom.pack(side=LEFT, fill=X, expand=1)
 
 insertButton = Button(window, text="Insert", font=("Arial 15"), command=lambda:onClickInsert(inputField.get()))
@@ -202,6 +272,9 @@ insertButton.pack(side=LEFT, fill=X, expand=1)
 
 deleteButton = Button(window, text="Delete", font=("Arial 15"))
 deleteButton.pack(side=LEFT, fill=X, expand=1)
+
+searchButton = Button(window, text="Search", font=("Arial 15"), command=lambda:onClickSearch(inputField.get()))
+searchButton.pack(side=LEFT, fill=X, expand=1)
 
 inputField = Entry(window, font=("Arial 15"))
 inputField.pack(side=LEFT, expand=0)
