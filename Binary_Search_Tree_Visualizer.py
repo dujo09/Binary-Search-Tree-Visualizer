@@ -1,19 +1,22 @@
+from cgitb import enable
 from tkinter import *
 from random import randint
 from time import sleep
-from tkinter.messagebox import showerror
+from tkinter.messagebox import showerror, showinfo
+from venv import create
 
 NODE_RADIUS = 30
 BACKGROUND_COLOR = "black"
 NODE_COLOR = "white"
+HIGHLIGHT_COLOR = "lightgray"
 TEXT_COLOR = "black"
 LINE_COLOR = "white"
-FONT = "Arial 20 bold"
+FONT_SIZE = 20
 
 WINDOW_WIDTH = 1200
 WINDOW_HEIGHT = 700
 X_PADDING = 150
-Y_PADDING = NODE_RADIUS * 3 + 10
+Y_PADDING = NODE_RADIUS * 4 + 5
 
 MAX_DEPTH = 4
 MAX_VALUE = 100
@@ -43,98 +46,142 @@ def calculateRightChildPosition(parentPositionX, parentPositionY, childDepth):
     return (rightChildPositionX, rightChildPositionY)
 
 
-def insertNode(root: Node, value, depth, canvas, rootPositionX, rootPositionY):
-    if depth > MAX_DEPTH:
-        showerror(title="ERROR", message="Max depth reached")
-        return root
+def insertNode(rootNode, value, rootPositionX, rootPositionY, nodeDepth, canvas, window):
+    if nodeDepth > MAX_DEPTH:
+        showinfo(title="Insert", message="Max depth reached")
+        return rootNode
 
-    insertedOval = createOvalWithText(canvas, rootPositionX, rootPositionY - 2 * NODE_RADIUS - 5,
-                     NODE_RADIUS, NODE_COLOR,
-                     value, TEXT_COLOR, FONT)
+    if rootNode is None:
+        rootNode = Node(value)
+        return rootNode
 
+    createOvalWithText(canvas, rootPositionX, rootPositionY - 3 * NODE_RADIUS,
+                        NODE_RADIUS, NODE_COLOR,
+                        value, TEXT_COLOR, FONT_SIZE)
+    window.update()
     sleep(ANIMATION_DELAY)
+    
 
-    canvas.itemconfig(insertedOval, fill="lightgrey")
+    if value < rootNode.value:
+        createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
+                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, NODE_COLOR,
+                                "<", TEXT_COLOR, FONT_SIZE)
+        window.update()
+        sleep(ANIMATION_DELAY)
 
-    if root is None:
-        root = Node(value)
-        return root
+        leftChildPositionX, leftChildPositionY = calculateLeftChildPosition(rootPositionX, rootPositionY, nodeDepth + 1)
+        rootNode.leftChild = insertNode(rootNode.leftChild, value, 
+                                        leftChildPositionX, leftChildPositionY, 
+                                        nodeDepth + 1, 
+                                        canvas, window)
+    elif value > rootNode.value:
+        createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
+                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, NODE_COLOR,
+                                ">", TEXT_COLOR, FONT_SIZE)
+        window.update()
+        sleep(ANIMATION_DELAY)
+        
+        rightChildPositionX, rightChildPositionY = calculateRightChildPosition(rootPositionX, rootPositionY, nodeDepth + 1)
+        rootNode.rightChild = insertNode(rootNode.rightChild, value, 
+                                         rightChildPositionX, rightChildPositionY,
+                                         nodeDepth + 1, 
+                                         canvas, window)
+    elif value == rootNode.value:
+        showinfo(title="Insert", message="Node already in tree")
 
-    if value < root.value:
-        leftChildPositionX, leftChildPositionY = calculateLeftChildPosition(rootPositionX, rootPositionY, depth + 1)
-        root.leftChild = insertNode(root.leftChild, value, depth + 1, canvas, leftChildPositionX, leftChildPositionY)
-    elif value > root.value:
-        rightChildPositionX, rightChildPositionY = calculateRightChildPosition(rootPositionX, rootPositionY, depth + 1)
-        root.rightChild = insertNode(root.rightChild, value, depth + 1, canvas, rightChildPositionX, rightChildPositionY)
-    elif value == root.value:
-        showerror(title="ERROR", message="Node already in tree")
-
-    return root
+    return rootNode
 
 
-def deleteNode(root: Node, value: int):
-    pass
-
-
-def drawTree(root: Node, canvas, rootPositionX, rootPositionY, depth):
-    if root is None:
+def drawTree(rootNode, rootPositionX, rootPositionY, nodeDepth, canvas, window):
+    if rootNode is None:
         return
 
-    if root.leftChild is not None:
-        leftChildPositionX, leftChildPositionY = calculateLeftChildPosition(rootPositionX, rootPositionY, depth + 1)
+    if rootNode.leftChild is not None:
+        leftChildPositionX, leftChildPositionY = calculateLeftChildPosition(rootPositionX, rootPositionY, nodeDepth + 1)
         canvas.create_line(rootPositionX, rootPositionY,
                            leftChildPositionX, leftChildPositionY, 
                            fill=LINE_COLOR, width=5)
-        drawTree(root.leftChild, canvas, leftChildPositionX, leftChildPositionY, depth + 1)
+        drawTree(rootNode.leftChild, 
+                 leftChildPositionX, leftChildPositionY, 
+                 nodeDepth + 1,
+                 canvas, window)
 
-    if root.rightChild is not None:
-        rightChildPositionX, rightChildPositionY = calculateRightChildPosition(rootPositionX, rootPositionY, depth + 1)
+    if rootNode.rightChild is not None:
+        rightChildPositionX, rightChildPositionY = calculateRightChildPosition(rootPositionX, rootPositionY, nodeDepth + 1)
         canvas.create_line(rootPositionX, rootPositionY,
                            rightChildPositionX, rightChildPositionY, 
                            fill=LINE_COLOR, width=5)
-        drawTree(root.rightChild, canvas, rightChildPositionX, rightChildPositionY, depth + 1)
+        drawTree(rootNode.rightChild, 
+                 rightChildPositionX, rightChildPositionY, 
+                 nodeDepth + 1,
+                 canvas, window)
 
     createOvalWithText(canvas, rootPositionX, rootPositionY, 
                      NODE_RADIUS, NODE_COLOR, 
-                     root.value, TEXT_COLOR, FONT)
-
-
-def createOvalWithText(canvas, centerX, centerY, radius, color, text, textColor, font):
-    oval = canvas.create_oval(centerX - radius, centerY - radius,
-                       centerX + radius, centerY + radius,
-                       fill=color, width=0)
-    canvas.create_text(centerX, centerY,
-                       text=text,
-                       fill=textColor,
-                       font=font)
+                     rootNode.value, TEXT_COLOR, FONT_SIZE)
     window.update()
 
-    return oval
+
+def createOvalWithText(canvas, centerX, centerY, radius, ovalColor, text, textColor, fontSize):
+    oval = canvas.create_oval(centerX - radius, centerY - radius,
+                       centerX + radius, centerY + radius,
+                       fill=ovalColor, width=0)
+    text = canvas.create_text(centerX, centerY,
+                       text=text, fill=textColor, font=("Arial " + str(int(fontSize)) + " bold"))
 
 
-def onClickInsert(value):
-    global rootNode
+def createRectangleWithText(canvas, centerX, centerY, width, height, rectangleColor, text, textColor, fontSize):
+    canvas.create_rectangle(centerX - width / 2, centerY - height / 2,
+                            centerX + width / 2, centerY + height / 2,
+                            fill=rectangleColor, width=0)
+    canvas.create_text(centerX, centerY,
+                       text=text, fill=textColor, font=("Arial " + str(int(fontSize)) + " bold"))
+
+
+def isInputValid(value) -> bool:
     try:
         value = int(value)
     except ValueError:
         showerror(title="ERROR", message="Invalid input")
-        return
+        return False
 
     if value > MAX_VALUE:
         showerror(title="ERROR", message="Input value exceeding max allowed")
-        return
+        return False
     if value < MIN_VALUE:
         showerror(title="ERROR", message="Input value under min allowed")
+        return False
+    return True
+
+
+def onClickInsert(value):
+    global rootNode
+
+    if not isInputValid(value):
         return
+
+    value = int(value)
 
     rootPositionX = WINDOW_WIDTH/2
     rootPositionY = Y_PADDING
 
-    rootNode = insertNode(rootNode, value, 0, canvas, rootPositionX, rootPositionY)
+    insertButton["state"] = DISABLED
+    insertRandom["state"] = DISABLED
+    deleteButton["state"] = DISABLED
+    inputField["state"] = DISABLED
 
+    rootNode = insertNode(rootNode, value, rootPositionX, rootPositionY, 0, canvas, window)
+
+    drawTree(rootNode, rootPositionX, rootPositionY, 0, canvas, window)
+
+    sleep(1)
     canvas.delete("all")
+    drawTree(rootNode, rootPositionX, rootPositionY, 0, canvas, window)
 
-    drawTree(rootNode, canvas, rootPositionX, rootPositionY, 0)
+    insertButton["state"] = NORMAL
+    insertRandom["state"] = NORMAL
+    deleteButton["state"] = NORMAL
+    inputField["state"] = NORMAL
 
 
 window.geometry(str(WINDOW_WIDTH) + "x" + str(WINDOW_HEIGHT) + "+100-100")
@@ -145,22 +192,23 @@ window.title("Binary Search Tree Visualizer")
 canvas = Canvas(window, bg=BACKGROUND_COLOR)
 canvas.pack(side=TOP, fill=BOTH, expand=2)
 
-insertRandom = Button(window, text="Insert Random", font=("Arial 15 bold"), 
-                      command=lambda:onClickInsert(randint(MIN_VALUE, MAX_VALUE)))
+insertRandom = Button(window, text="Insert Random", font=("Arial 15"), 
+                      command=lambda:onClickInsert(randint(MIN_VALUE, MAX_VALUE))
+)
 insertRandom.pack(side=LEFT, fill=X, expand=1)
-window.bind('<Rightshift>',lambda event:onClickInsert(inputField.get()))
 
-insertButton = Button(window, text="Insert", font=("Arial 15 bold"), command=lambda:onClickInsert(inputField.get()))
+insertButton = Button(window, text="Insert", font=("Arial 15"), command=lambda:onClickInsert(inputField.get()))
 insertButton.pack(side=LEFT, fill=X, expand=1)
-window.bind('<Return>',lambda event:onClickInsert(inputField.get()))
 
-deleteButton = Button(window, text="Delete", font=("Arial 15 bold"))
+deleteButton = Button(window, text="Delete", font=("Arial 15"))
 deleteButton.pack(side=LEFT, fill=X, expand=1)
 
-inputField = Entry(window, font=("Arial 15 bold"))
+inputField = Entry(window, font=("Arial 15"))
 inputField.pack(side=LEFT, expand=0)
 
 window.mainloop()
+
+
 
 
 
