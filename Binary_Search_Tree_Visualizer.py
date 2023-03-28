@@ -24,7 +24,7 @@ MAX_DEPTH = 4
 MAX_VALUE = 100
 MIN_VALUE = 0
 
-ANIMATION_DELAY = 0.5
+ANIMATION_DELAY = 1
 
 rootNode = None
 window = Tk()
@@ -58,15 +58,15 @@ def insertNode(rootNode, value, rootPositionX, rootPositionY, nodeDepth, canvas,
         return rootNode
 
     createOvalWithText(canvas, rootPositionX, rootPositionY - 3 * NODE_RADIUS,
-                        NODE_RADIUS, NODE_COLOR,
-                        value, TEXT_COLOR, FONT_SIZE)
+                        NODE_RADIUS, HIGHLIGHT_COLOR,
+                        value, HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
     window.update()
     sleep(ANIMATION_DELAY)
     
     if value < rootNode.value:
         createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
-                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, NODE_COLOR,
-                                "<", TEXT_COLOR, FONT_SIZE)
+                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
+                                "<", HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
         window.update()
         sleep(ANIMATION_DELAY)
 
@@ -77,8 +77,8 @@ def insertNode(rootNode, value, rootPositionX, rootPositionY, nodeDepth, canvas,
                                         canvas, window)
     elif value > rootNode.value:
         createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
-                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, NODE_COLOR,
-                                ">", TEXT_COLOR, FONT_SIZE)
+                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
+                                ">", HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
         window.update()
         sleep(ANIMATION_DELAY)
         
@@ -112,6 +112,52 @@ def insertNodeWithoutAnimation(rootNode, value, nodeDepth):
 def searchTree(rootNode, value, rootPositionX, rootPositionY, nodeDepth, canvas, window):
     if rootNode is None:
         showinfo(title="Search", message="Node not found")
+        return
+
+    createOvalWithText(canvas, rootPositionX, rootPositionY - 3 * NODE_RADIUS,
+                        NODE_RADIUS, HIGHLIGHT_COLOR,
+                        value, HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
+    window.update()
+    sleep(ANIMATION_DELAY)
+
+    if value < rootNode.value:
+        createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
+                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
+                                "<", HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
+        window.update()
+        sleep(ANIMATION_DELAY)
+
+        leftChildPositionX, leftChildPositionY = calculateLeftChildPosition(rootPositionX, rootPositionY, nodeDepth + 1)
+        searchTree(rootNode.leftChild, value, 
+                    leftChildPositionX, leftChildPositionY, 
+                    nodeDepth + 1, 
+                    canvas, window)
+    elif value > rootNode.value:
+        createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
+                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
+                                ">", HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
+        window.update()
+        sleep(ANIMATION_DELAY)
+        
+        rightChildPositionX, rightChildPositionY = calculateRightChildPosition(rootPositionX, rootPositionY, nodeDepth + 1)
+        searchTree(rootNode.rightChild, value, 
+                    rightChildPositionX, rightChildPositionY,
+                    nodeDepth + 1, 
+                    canvas, window)
+    elif value == rootNode.value:
+        createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
+                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
+                                "=", HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
+        createOvalWithText(canvas, rootPositionX, rootPositionY,
+                            NODE_RADIUS, HIGHLIGHT_COLOR,
+                            value, HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
+        window.update()
+        sleep(ANIMATION_DELAY)
+
+
+def deleteNode(rootNode, value, rootPositionX, rootPositionY, nodeDepth, canvas, window):
+    if rootNode is None:
+        showinfo(title="Delete", message="Node not found")
         return None
 
     createOvalWithText(canvas, rootPositionX, rootPositionY - 3 * NODE_RADIUS,
@@ -128,10 +174,10 @@ def searchTree(rootNode, value, rootPositionX, rootPositionY, nodeDepth, canvas,
         sleep(ANIMATION_DELAY)
 
         leftChildPositionX, leftChildPositionY = calculateLeftChildPosition(rootPositionX, rootPositionY, nodeDepth + 1)
-        return searchTree(rootNode.leftChild, value, 
-                        leftChildPositionX, leftChildPositionY, 
-                        nodeDepth + 1, 
-                        canvas, window)
+        rootNode.leftChild = deleteNode(rootNode.leftChild, value, 
+                                        leftChildPositionX, leftChildPositionY, 
+                                        nodeDepth + 1, 
+                                        canvas, window)
     elif value > rootNode.value:
         createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
                                 NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
@@ -140,10 +186,10 @@ def searchTree(rootNode, value, rootPositionX, rootPositionY, nodeDepth, canvas,
         sleep(ANIMATION_DELAY)
         
         rightChildPositionX, rightChildPositionY = calculateRightChildPosition(rootPositionX, rootPositionY, nodeDepth + 1)
-        return searchTree(rootNode.rightChild, value, 
-                        rightChildPositionX, rightChildPositionY,
-                        nodeDepth + 1, 
-                        canvas, window)
+        rootNode.rightChild = deleteNode(rootNode.rightChild, value, 
+                                        rightChildPositionX, rightChildPositionY,
+                                        nodeDepth + 1, 
+                                        canvas, window)
     elif value == rootNode.value:
         createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
                                 NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
@@ -153,7 +199,133 @@ def searchTree(rootNode, value, rootPositionX, rootPositionY, nodeDepth, canvas,
                             value, HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
         window.update()
         sleep(ANIMATION_DELAY)
-        return (rootNode, nodeDepth)
+        
+        if rootNode.leftChild is None and rootNode.rightChild is None:
+            return None
+
+        clearCanvasAndDrawTree()
+
+        if rootNode.rightChild is not None:
+            createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
+                                    6.5 * NODE_RADIUS, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
+                                    "REPLACE WITH MIN >>", HIGHLIGHT_TEXT_COLOR, FONT_SIZE / 1.5)
+
+            window.update()
+            sleep(ANIMATION_DELAY)
+
+            rightChildPositionX, rightChildPositionY = calculateRightChildPosition(rootPositionX, rootPositionY, nodeDepth + 1)
+            rootNode.value = getMinNodeValue(rootNode.rightChild, 
+                                         rightChildPositionX, rightChildPositionY, 
+                                         nodeDepth + 1, 
+                                         canvas, window)
+
+            createOvalWithText(canvas, rootPositionX, rootPositionY,
+                            NODE_RADIUS, HIGHLIGHT_COLOR,
+                            rootNode.value, HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
+            window.update()
+            sleep(ANIMATION_DELAY)
+
+            clearCanvasAndDrawTree()
+
+            createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
+                                    6.5 * NODE_RADIUS, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
+                                    "DELETE DUPLICATE >>", HIGHLIGHT_TEXT_COLOR, FONT_SIZE / 1.5)
+
+            window.update()
+            sleep(ANIMATION_DELAY)
+
+            rootNode.rightChild = deleteNode(rootNode.rightChild, rootNode.value,
+                                             rightChildPositionX, rightChildPositionY,
+                                             nodeDepth + 1,
+                                             canvas, window)
+        else:
+            createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
+                                    6.5 * NODE_RADIUS, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
+                                    "<< REPLACE WITH MAX", HIGHLIGHT_TEXT_COLOR, FONT_SIZE / 1.5)
+
+            window.update()
+            sleep(ANIMATION_DELAY)
+
+            leftChildPositionX, leftChildPositionY = calculateLeftChildPosition(rootPositionX, rootPositionY, nodeDepth + 1)
+            rootNode.value = getMaxNodeValue(rootNode.leftChild, 
+                                         leftChildPositionX, leftChildPositionY, 
+                                         nodeDepth + 1, 
+                                         canvas, window)
+
+            createOvalWithText(canvas, rootPositionX, rootPositionY,
+                            NODE_RADIUS, HIGHLIGHT_COLOR,
+                            rootNode.value, HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
+            window.update()
+            sleep(ANIMATION_DELAY)
+
+            clearCanvasAndDrawTree()
+
+            createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
+                                    6.5 * NODE_RADIUS, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
+                                    "<< DELETE DUPLICATE", HIGHLIGHT_TEXT_COLOR, FONT_SIZE / 1.5)
+
+            window.update()
+            sleep(ANIMATION_DELAY)
+
+            rootNode.leftChild = deleteNode(rootNode.leftChild, rootNode.value,
+                                             leftChildPositionX, leftChildPositionY,
+                                             nodeDepth + 1,
+                                             canvas, window)
+    return rootNode
+
+
+def getMinNodeValue(rootNode, rootPositionX, rootPositionY, nodeDepth, canvas, window):
+
+    if rootNode.leftChild is None:
+        createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
+                                NODE_RADIUS, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
+                                "MIN", HIGHLIGHT_TEXT_COLOR, FONT_SIZE / 1.5)
+        createOvalWithText(canvas, rootPositionX, rootPositionY,
+                            NODE_RADIUS, HIGHLIGHT_COLOR,
+                            rootNode.value, HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
+        window.update()
+        sleep(ANIMATION_DELAY)
+
+        return rootNode.value
+    else:
+        createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
+                                NODE_RADIUS, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
+                                "<<", HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
+        window.update()
+        sleep(ANIMATION_DELAY)
+
+        leftChildPositionX, leftChildPositionY = calculateLeftChildPosition(rootPositionX, rootPositionY, nodeDepth + 1)
+        return getMinNodeValue(rootNode.leftChild, 
+                            leftChildPositionX, leftChildPositionY, 
+                            nodeDepth + 1, 
+                            canvas, window)
+
+    
+def getMaxNodeValue(rootNode, rootPositionX, rootPositionY, nodeDepth, canvas, window):
+
+    if rootNode.rightChild is None:
+        createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
+                                NODE_RADIUS, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
+                                "MAX", HIGHLIGHT_TEXT_COLOR, FONT_SIZE / 1.5)
+        createOvalWithText(canvas, rootPositionX, rootPositionY,
+                            NODE_RADIUS, HIGHLIGHT_COLOR,
+                            rootNode.value, HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
+        window.update()
+        sleep(ANIMATION_DELAY)
+
+        return rootNode.value
+    else:
+        createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
+                                NODE_RADIUS, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
+                                ">>", HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
+        window.update()
+        sleep(ANIMATION_DELAY)
+
+        rightChildPositionX, rightChildPositionY = calculateRightChildPosition(rootPositionX, rootPositionY, nodeDepth + 1)
+        return getMaxNodeValue(rootNode.rightChild, 
+                                rightChildPositionX, rightChildPositionY, 
+                                nodeDepth + 1, 
+                                canvas, window)
 
 
 def drawTree(rootNode, rootPositionX, rootPositionY, nodeDepth, canvas, window):
@@ -184,6 +356,13 @@ def drawTree(rootNode, rootPositionX, rootPositionY, nodeDepth, canvas, window):
                      NODE_RADIUS, NODE_COLOR, 
                      rootNode.value, TEXT_COLOR, FONT_SIZE)
     window.update()
+
+
+def clearCanvasAndDrawTree():
+        treePositionX = WINDOW_WIDTH/2
+        treePositionY = Y_PADDING
+        canvas.delete("all")
+        drawTree(rootNode, treePositionX, treePositionY, 0, canvas, window)
 
 
 def createOvalWithText(canvas, centerX, centerY, radius, ovalColor, text, textColor, fontSize):
@@ -233,8 +412,6 @@ def onClickInsert(value):
 
     rootNode = insertNode(rootNode, value, rootPositionX, rootPositionY, 0, canvas, window)
 
-    drawTree(rootNode, rootPositionX, rootPositionY, 0, canvas, window)
-
     sleep(1)
 
     canvas.delete("all")
@@ -264,12 +441,35 @@ def onClickSearch(value):
     enableUI()
 
 
+def onClickDelete(value):
+    global rootNode
+
+    if not isInputValid(value):
+        return
+
+    value = int(value)
+
+    rootPositionX = WINDOW_WIDTH/2
+    rootPositionY = Y_PADDING
+
+    disableUI()
+
+    rootNode = deleteNode(rootNode, value, rootPositionX, rootPositionY, 0, canvas, window)
+
+    sleep(1)
+
+    canvas.delete("all")
+    drawTree(rootNode, rootPositionX, rootPositionY, 0, canvas, window)
+    
+    enableUI()
+
+
 def onClickGenerateRandomTree():
     global rootNode
 
     rootNode = None
 
-    numberOfInserts = randint(10, 50)
+    numberOfInserts = randint(5, 30)
 
     for x in range(numberOfInserts):
         nodeValue = randint(MIN_VALUE, MAX_VALUE)
@@ -280,6 +480,7 @@ def onClickGenerateRandomTree():
 
     canvas.delete("all")
     drawTree(rootNode, rootPositionX, rootPositionY, 0, canvas, window)
+
 
 def disableUI():
     insertButton["state"] = DISABLED
@@ -311,7 +512,7 @@ generateRandomTreeButton.pack(side=LEFT, fill=X, expand=1)
 insertButton = Button(window, text="Insert", font=("Arial 15"), command=lambda:onClickInsert(inputField.get()))
 insertButton.pack(side=LEFT, fill=X, expand=1)
 
-deleteButton = Button(window, text="Delete", font=("Arial 15"))
+deleteButton = Button(window, text="Delete", font=("Arial 15"), command=lambda:onClickDelete(inputField.get()))
 deleteButton.pack(side=LEFT, fill=X, expand=1)
 
 searchButton = Button(window, text="Search", font=("Arial 15"), command=lambda:onClickSearch(inputField.get()))
