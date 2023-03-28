@@ -1,4 +1,5 @@
 from cgitb import enable
+from lib2to3.pgen2.token import NUMBER
 from tkinter import *
 from random import randint
 from time import sleep
@@ -8,7 +9,8 @@ from venv import create
 NODE_RADIUS = 30
 BACKGROUND_COLOR = "black"
 NODE_COLOR = "white"
-HIGHLIGHT_COLOR = "lightgray"
+HIGHLIGHT_COLOR = "red"
+HIGHLIGHT_TEXT_COLOR = "white"
 TEXT_COLOR = "black"
 LINE_COLOR = "white"
 FONT_SIZE = 20
@@ -91,47 +93,67 @@ def insertNode(rootNode, value, rootPositionX, rootPositionY, nodeDepth, canvas,
     return rootNode
 
 
-def searchTree(rootNode, value, rootPositionX, rootPositionY, nodeDepth, canvas, window):
-    if nodeDepth > MAX_DEPTH or rootNode is None:
-        showinfo(title="Search", message="Node not found")
+def insertNodeWithoutAnimation(rootNode, value, nodeDepth):
+    if nodeDepth > MAX_DEPTH:
         return rootNode
 
+    if rootNode is None:
+        rootNode = Node(value)
+        return rootNode
+
+    if value < rootNode.value:
+        rootNode.leftChild = insertNodeWithoutAnimation(rootNode.leftChild, value, nodeDepth + 1)
+    elif value > rootNode.value:
+        rootNode.rightChild = insertNodeWithoutAnimation(rootNode.rightChild, value, nodeDepth + 1)
+
+    return rootNode
+
+
+def searchTree(rootNode, value, rootPositionX, rootPositionY, nodeDepth, canvas, window):
+    if rootNode is None:
+        showinfo(title="Search", message="Node not found")
+        return None
+
     createOvalWithText(canvas, rootPositionX, rootPositionY - 3 * NODE_RADIUS,
-                        NODE_RADIUS, NODE_COLOR,
-                        value, TEXT_COLOR, FONT_SIZE)
+                        NODE_RADIUS, HIGHLIGHT_COLOR,
+                        value, HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
     window.update()
     sleep(ANIMATION_DELAY)
 
     if value < rootNode.value:
         createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
-                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, NODE_COLOR,
-                                "<", TEXT_COLOR, FONT_SIZE)
+                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
+                                "<", HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
         window.update()
         sleep(ANIMATION_DELAY)
 
         leftChildPositionX, leftChildPositionY = calculateLeftChildPosition(rootPositionX, rootPositionY, nodeDepth + 1)
-        searchTree(rootNode.leftChild, value, 
-                    leftChildPositionX, leftChildPositionY, 
-                    nodeDepth + 1, 
-                    canvas, window)
+        return searchTree(rootNode.leftChild, value, 
+                        leftChildPositionX, leftChildPositionY, 
+                        nodeDepth + 1, 
+                        canvas, window)
     elif value > rootNode.value:
         createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
-                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, NODE_COLOR,
-                                ">", TEXT_COLOR, FONT_SIZE)
+                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
+                                ">", HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
         window.update()
         sleep(ANIMATION_DELAY)
         
         rightChildPositionX, rightChildPositionY = calculateRightChildPosition(rootPositionX, rootPositionY, nodeDepth + 1)
-        searchTree(rootNode.rightChild, value, 
-                    rightChildPositionX, rightChildPositionY,
-                    nodeDepth + 1, 
-                    canvas, window)
+        return searchTree(rootNode.rightChild, value, 
+                        rightChildPositionX, rightChildPositionY,
+                        nodeDepth + 1, 
+                        canvas, window)
     elif value == rootNode.value:
         createRectangleWithText(canvas, rootPositionX, rootPositionY - 1.5 * NODE_RADIUS,
-                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, NODE_COLOR,
-                                "=", TEXT_COLOR, FONT_SIZE)
+                                NODE_RADIUS / 1.5, NODE_RADIUS / 1.5, HIGHLIGHT_COLOR,
+                                "=", HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
+        createOvalWithText(canvas, rootPositionX, rootPositionY,
+                            NODE_RADIUS, HIGHLIGHT_COLOR,
+                            value, HIGHLIGHT_TEXT_COLOR, FONT_SIZE)
         window.update()
         sleep(ANIMATION_DELAY)
+        return (rootNode, nodeDepth)
 
 
 def drawTree(rootNode, rootPositionX, rootPositionY, nodeDepth, canvas, window):
@@ -207,25 +229,18 @@ def onClickInsert(value):
     rootPositionX = WINDOW_WIDTH/2
     rootPositionY = Y_PADDING
 
-    insertButton["state"] = DISABLED
-    insertRandom["state"] = DISABLED
-    deleteButton["state"] = DISABLED
-    searchButton["state"] = DISABLED
-    inputField["state"] = DISABLED
+    disableUI()
 
     rootNode = insertNode(rootNode, value, rootPositionX, rootPositionY, 0, canvas, window)
 
     drawTree(rootNode, rootPositionX, rootPositionY, 0, canvas, window)
 
     sleep(1)
+
     canvas.delete("all")
     drawTree(rootNode, rootPositionX, rootPositionY, 0, canvas, window)
 
-    insertButton["state"] = NORMAL
-    insertRandom["state"] = NORMAL
-    deleteButton["state"] = NORMAL
-    searchButton["state"] = NORMAL
-    inputField["state"] = NORMAL
+    enableUI()
 
 
 def onClickSearch(value):
@@ -237,20 +252,46 @@ def onClickSearch(value):
     rootPositionX = WINDOW_WIDTH/2
     rootPositionY = Y_PADDING
 
-    insertButton["state"] = DISABLED
-    insertRandom["state"] = DISABLED
-    deleteButton["state"] = DISABLED
-    searchButton["state"] = DISABLED
-    inputField["state"] = DISABLED
+    disableUI()
 
     searchTree(rootNode, value, rootPositionX, rootPositionY, 0, canvas, window)
 
     sleep(1)
+
+    canvas.delete("all")
+    drawTree(rootNode, rootPositionX, rootPositionY, 0, canvas, window)
+    
+    enableUI()
+
+
+def onClickGenerateRandomTree():
+    global rootNode
+
+    rootNode = None
+
+    numberOfInserts = randint(10, 50)
+
+    for x in range(numberOfInserts):
+        nodeValue = randint(MIN_VALUE, MAX_VALUE)
+        rootNode = insertNodeWithoutAnimation(rootNode, nodeValue, 0)
+    
+    rootPositionX = WINDOW_WIDTH/2
+    rootPositionY = Y_PADDING
+
     canvas.delete("all")
     drawTree(rootNode, rootPositionX, rootPositionY, 0, canvas, window)
 
+def disableUI():
+    insertButton["state"] = DISABLED
+    generateRandomTreeButton["state"] = DISABLED
+    deleteButton["state"] = DISABLED
+    searchButton["state"] = DISABLED
+    inputField["state"] = DISABLED
+
+
+def enableUI():
     insertButton["state"] = NORMAL
-    insertRandom["state"] = NORMAL
+    generateRandomTreeButton["state"] = NORMAL
     deleteButton["state"] = NORMAL
     searchButton["state"] = NORMAL
     inputField["state"] = NORMAL
@@ -263,9 +304,9 @@ window.title("Binary Search Tree Visualizer")
 canvas = Canvas(window, bg=BACKGROUND_COLOR)
 canvas.pack(side=TOP, fill=BOTH, expand=2)
 
-insertRandom = Button(window, text="Insert Random", font=("Arial 15"), 
-                      command=lambda:onClickInsert(randint(MIN_VALUE, MAX_VALUE)))
-insertRandom.pack(side=LEFT, fill=X, expand=1)
+generateRandomTreeButton = Button(window, text="Generate Random Tree", font=("Arial 15"), 
+                      command=lambda:onClickGenerateRandomTree())
+generateRandomTreeButton.pack(side=LEFT, fill=X, expand=1)
 
 insertButton = Button(window, text="Insert", font=("Arial 15"), command=lambda:onClickInsert(inputField.get()))
 insertButton.pack(side=LEFT, fill=X, expand=1)
