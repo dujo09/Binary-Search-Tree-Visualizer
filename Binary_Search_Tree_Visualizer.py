@@ -469,7 +469,7 @@ def onClickGenerateRandomTree():
 
     rootNode = None
 
-    numberOfInserts = randint(5, 30)
+    numberOfInserts = randint(100, 100)
 
     for x in range(numberOfInserts):
         nodeValue = randint(MIN_VALUE, MAX_VALUE)
