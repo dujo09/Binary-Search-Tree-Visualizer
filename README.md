@@ -5,9 +5,9 @@ A BST visualizer coded in Python using Tkinter. Made in order to learn Python. P
 |                                                                 |
 |:---------------------------------------------------------------:|
 |**DELETE NODE ANIMATION**                                        |
-|<img src=".\art\BST-Visualizer-Delete.gif?raw=true" width="100%">|
+|![Delete node animation](art/BST-Visualizer-Delete.gif)          |
 |**SEARCH FOR NODE**                                              |
-|<img src=".\art\BST-Visualizer-Search.png?raw=true" width="100%">|
+|![Search tree image](art/BST-Visualizer-Search.png)              |
 
 ## Features
 - Generate random trees
